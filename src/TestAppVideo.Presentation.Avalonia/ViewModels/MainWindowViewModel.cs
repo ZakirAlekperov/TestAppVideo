@@ -27,11 +27,12 @@ public sealed class MainWindowViewModel : ViewModelBase
         set => SetProperty(ref _outputDirectory, value);
     }
 
-    private SplittingMode _mode = SplittingMode.EqualParts;
-    public SplittingMode Mode
+    // Для предсказуемого UI-binding используем SelectedIndex.
+    private int _modeIndex;
+    public int ModeIndex
     {
-        get => _mode;
-        set => SetProperty(ref _mode, value);
+        get => _modeIndex;
+        set => SetProperty(ref _modeIndex, value);
     }
 
     private int _numberOfParts = 4;
@@ -211,7 +212,9 @@ public sealed class MainWindowViewModel : ViewModelBase
 
     private SplittingParametersDto BuildParameters()
     {
-        if (Mode == SplittingMode.EqualParts)
+        var mode = ModeIndex == 0 ? SplittingMode.EqualParts : SplittingMode.FixedDuration;
+
+        if (mode == SplittingMode.EqualParts)
         {
             return new SplittingParametersDto
             {

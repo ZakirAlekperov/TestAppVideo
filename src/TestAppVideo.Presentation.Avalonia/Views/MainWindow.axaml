@@ -26,9 +26,9 @@
 
       <StackPanel Orientation="Horizontal" Spacing="8">
         <TextBlock VerticalAlignment="Center" Text="Mode:" />
-        <ComboBox SelectedItem="{Binding Mode}" Width="220">
-          <ComboBoxItem Content="EqualParts" Tag="{x:Static vm:SplittingMode.EqualParts}" />
-          <ComboBoxItem Content="FixedDuration" Tag="{x:Static vm:SplittingMode.FixedDuration}" />
+        <ComboBox SelectedIndex="{Binding ModeIndex}" Width="220">
+          <ComboBoxItem Content="EqualParts" />
+          <ComboBoxItem Content="FixedDuration" />
         </ComboBox>
       </StackPanel>
 
