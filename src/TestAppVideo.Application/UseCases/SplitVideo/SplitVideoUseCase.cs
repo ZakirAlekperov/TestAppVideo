@@ -1,97 +1,104 @@
+namespace TestAppVideo.Application.UseCases.SplitVideo;
+
 using TestAppVideo.Application.DTOs;
-using TestAppVideo.Domain.Common.Results;
 using TestAppVideo.Domain.FileManagement.Models;
+using TestAppVideo.Domain.FileManagement.Ports;
 using TestAppVideo.Domain.VideoProcessing.Models;
 using TestAppVideo.Domain.VideoProcessing.Ports;
-using TestAppVideo.Domain.VideoProcessing.Services;
-
-namespace TestAppVideo.Application.UseCases.SplitVideo;
+using TestAppVideo.Domain.VideoProcessing.Splitting;
 
 public sealed class SplitVideoUseCase
 {
     private readonly IVideoMetadataReader _metadataReader;
-    private readonly IVideoProcessor _videoProcessor;
-    private readonly IFileSystemService _fileSystem;
+    private readonly IVideoProcessor _processor;
+    private readonly IFileSystemAccess _fileSystem;
 
-    public SplitVideoUseCase(
-        IVideoMetadataReader metadataReader,
-        IVideoProcessor videoProcessor,
-        IFileSystemService fileSystem)
+    public SplitVideoUseCase(IVideoMetadataReader metadataReader, IVideoProcessor processor, IFileSystemAccess fileSystem)
     {
         _metadataReader = metadataReader ?? throw new ArgumentNullException(nameof(metadataReader));
-        _videoProcessor = videoProcessor ?? throw new ArgumentNullException(nameof(videoProcessor));
+        _processor = processor ?? throw new ArgumentNullException(nameof(processor));
         _fileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
     }
 
-    public async Task<Result<SplitVideoResult>> ExecuteAsync(
+    public async Task<SplitVideoResponse> ExecuteAsync(
         SplitVideoRequest request,
         IVideoProcessingProgress progress,
         CancellationToken cancellationToken)
     {
-        var filePathResult = VideoFilePath.Create(request.FilePath);
-        if (!filePathResult.IsSuccess)
-            return Result<SplitVideoResult>.Failure(filePathResult.Error);
-
-        var outputDirResult = OutputDirectory.Create(request.OutputDirectory);
-        if (!outputDirResult.IsSuccess)
-            return Result<SplitVideoResult>.Failure(outputDirResult.Error);
-
-        if (!_fileSystem.FileExists(filePathResult.Value.Value))
-            return Result<SplitVideoResult>.Failure("Файл не найден");
-
-        if (!_fileSystem.DirectoryExists(outputDirResult.Value.Value))
-            _fileSystem.CreateDirectory(outputDirResult.Value.Value);
-
-        var metadata = await _metadataReader.ReadMetadataAsync(filePathResult.Value, cancellationToken);
-        var videoResult = Video.Create(filePathResult.Value, metadata);
-        if (!videoResult.IsSuccess)
-            return Result<SplitVideoResult>.Failure(videoResult.Error);
-
-        var parametersResult = ParseParameters(request.SplittingParameters);
-        if (!parametersResult.IsSuccess)
-            return Result<SplitVideoResult>.Failure(parametersResult.Error);
-
-        var splitter = new VideoSplitter();
-        var segmentsResult = splitter.CalculateSegments(videoResult.Value, parametersResult.Value, outputDirResult.Value);
-        if (!segmentsResult.IsSuccess)
-            return Result<SplitVideoResult>.Failure(segmentsResult.Error);
-
-        var processingResult = await _videoProcessor.SplitVideoAsync(
-            videoResult.Value,
-            segmentsResult.Value,
-            outputDirResult.Value,
-            progress,
-            request.UseCompression,
-            cancellationToken);
-
-        if (!processingResult.IsSuccess)
-            return Result<SplitVideoResult>.Failure(processingResult.ErrorMessage);
-
-        return Result<SplitVideoResult>.Success(new SplitVideoResult
+        try
         {
-            SegmentsCreated = processingResult.OutputFiles.Count,
-            TotalProcessingTime = processingResult.ProcessingTime.ToString(@"hh\:mm\:ss")
-        });
+            var validationError = Validate(request);
+            if (validationError is not null)
+                return SplitVideoResponse.CreateFailure(validationError);
+
+            var exists = await _fileSystem.FileExistsAsync(request.FilePath, cancellationToken);
+            if (!exists)
+                return SplitVideoResponse.CreateFailure($"File not found: {request.FilePath}");
+
+            var filePath = new VideoFilePath(request.FilePath);
+            var metadata = await _metadataReader.ReadMetadataAsync(filePath, cancellationToken);
+            var video = new Video(filePath, metadata);
+
+            var outputDir = new OutputDirectory(request.OutputDirectory);
+            await _fileSystem.CreateDirectoryAsync(outputDir.Value, cancellationToken);
+
+            var strategy = CreateStrategy(request.SplittingParameters!);
+            if (!strategy.IsValidFor(video))
+                return SplitVideoResponse.CreateFailure("Strategy is not valid for this video");
+
+            var segments = strategy.CalculateSegments(video, outputDir);
+
+            var result = await _processor.SplitVideoAsync(video, segments, outputDir, progress, request.UseCompression, cancellationToken);
+            if (!result.Success)
+                return SplitVideoResponse.CreateFailure(result.ErrorMessage);
+
+            var dto = new ProcessingResultDto
+            {
+                OutputFilePaths = result.OutputFilePaths,
+                TotalProcessingTime = result.TotalProcessingTime,
+                SegmentsCreated = segments.Count
+            };
+
+            return SplitVideoResponse.CreateSuccess(dto);
+        }
+        catch (OperationCanceledException)
+        {
+            return SplitVideoResponse.CreateFailure("Operation cancelled");
+        }
+        catch (Exception ex)
+        {
+            return SplitVideoResponse.CreateFailure(ex.Message);
+        }
     }
 
-    private static Result<SplittingParameters> ParseParameters(SplittingParametersDto dto)
+    private static string? Validate(SplitVideoRequest request)
     {
-        if (dto.Mode == SplittingMode.EqualParts)
+        if (string.IsNullOrWhiteSpace(request.FilePath))
+            return "FilePath is required";
+        if (string.IsNullOrWhiteSpace(request.OutputDirectory))
+            return "OutputDirectory is required";
+        if (request.SplittingParameters is null)
+            return "SplittingParameters is required";
+
+        return request.SplittingParameters.Mode switch
         {
-            if (dto.NumberOfParts is null || dto.NumberOfParts < 2)
-                return Result<SplittingParameters>.Failure("Укажите корректное количество частей (>= 2)");
+            SplittingMode.EqualParts when (request.SplittingParameters.NumberOfParts ?? 0) <= 0
+                => "NumberOfParts must be positive",
 
-            return Result<SplittingParameters>.Success(SplittingParameters.CreateEqualParts(dto.NumberOfParts.Value));
-        }
+            SplittingMode.FixedDuration when (request.SplittingParameters.SegmentDuration ?? TimeSpan.Zero) <= TimeSpan.Zero
+                => "SegmentDuration must be positive",
 
-        if (dto.Mode == SplittingMode.FixedDuration)
+            _ => null
+        };
+    }
+
+    private static SplittingStrategy CreateStrategy(SplittingParametersDto parameters)
+    {
+        return parameters.Mode switch
         {
-            if (dto.SegmentDuration is null || dto.SegmentDuration <= TimeSpan.Zero)
-                return Result<SplittingParameters>.Failure("Укажите корректную длительность сегмента");
-
-            return Result<SplittingParameters>.Success(SplittingParameters.CreateFixedDuration(dto.SegmentDuration.Value));
-        }
-
-        return Result<SplittingParameters>.Failure("Неизвестный режим разделения");
+            SplittingMode.EqualParts => new EqualPartsSplittingStrategy(parameters.NumberOfParts ?? 0),
+            SplittingMode.FixedDuration => new FixedDurationSplittingStrategy(parameters.SegmentDuration ?? TimeSpan.Zero),
+            _ => throw new ArgumentOutOfRangeException(nameof(parameters.Mode))
+        };
     }
 }
