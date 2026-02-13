@@ -1,0 +1,68 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:TestAppVideo.Presentation.Avalonia.ViewModels"
+        x:Class="TestAppVideo.Presentation.Avalonia.Views.MainWindow"
+        Width="900" Height="650"
+        Title="TestAppVideo - Split Tool">
+
+  <Design.DataContext>
+    <vm:MainWindowViewModel />
+  </Design.DataContext>
+
+  <Grid RowDefinitions="Auto,Auto,*,Auto" ColumnDefinitions="*,*" Margin="16" RowSpacing="12" ColumnSpacing="12">
+
+    <TextBlock Grid.Row="0" Grid.ColumnSpan="2" FontSize="22" Text="Video splitting" />
+
+    <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Spacing="8">
+      <TextBlock Text="Input video file path" />
+      <TextBox Text="{Binding InputFilePath}" Watermark="/path/to/video.mp4" />
+
+      <TextBlock Text="Output directory" />
+      <TextBox Text="{Binding OutputDirectory}" Watermark="/path/to/output" />
+    </StackPanel>
+
+    <StackPanel Grid.Row="2" Grid.Column="0" Spacing="10">
+      <TextBlock FontSize="16" Text="Splitting settings" />
+
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <TextBlock VerticalAlignment="Center" Text="Mode:" />
+        <ComboBox SelectedItem="{Binding Mode}" Width="220">
+          <ComboBoxItem Content="EqualParts" Tag="{x:Static vm:SplittingMode.EqualParts}" />
+          <ComboBoxItem Content="FixedDuration" Tag="{x:Static vm:SplittingMode.FixedDuration}" />
+        </ComboBox>
+      </StackPanel>
+
+      <TextBlock Text="Number of parts (EqualParts)" />
+      <NumericUpDown Minimum="1" Maximum="1000" Value="{Binding NumberOfParts}" />
+
+      <TextBlock Text="Segment duration seconds (FixedDuration)" />
+      <NumericUpDown Minimum="1" Maximum="86400" Value="{Binding SegmentDurationSeconds}" />
+
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <Button Content="Load metadata" Command="{Binding LoadMetadataCommand}" />
+        <Button Content="Preview" Command="{Binding PreviewCommand}" />
+      </StackPanel>
+
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <Button Content="Split" Command="{Binding SplitCommand}" />
+        <Button Content="Cancel" Command="{Binding CancelCommand}" />
+      </StackPanel>
+
+      <ProgressBar Minimum="0" Maximum="100" Value="{Binding Progress}" Height="12" />
+      <TextBlock Text="{Binding Status}" TextWrapping="Wrap" />
+    </StackPanel>
+
+    <StackPanel Grid.Row="2" Grid.Column="1" Spacing="8">
+      <TextBlock FontSize="16" Text="Preview segments" />
+      <DataGrid ItemsSource="{Binding PreviewSegments}" AutoGenerateColumns="False" IsReadOnly="True">
+        <DataGrid.Columns>
+          <DataGridTextColumn Header="#" Binding="{Binding SegmentNumber}" Width="60" />
+          <DataGridTextColumn Header="Start" Binding="{Binding Start}" Width="*" />
+          <DataGridTextColumn Header="End" Binding="{Binding End}" Width="*" />
+          <DataGridTextColumn Header="File" Binding="{Binding OutputFileName}" Width="2*" />
+        </DataGrid.Columns>
+      </DataGrid>
+    </StackPanel>
+
+  </Grid>
+</Window>
