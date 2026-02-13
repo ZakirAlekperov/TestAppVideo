@@ -9,7 +9,7 @@ using TestAppVideo.Presentation.Avalonia.Views;
 
 namespace TestAppVideo.Presentation.Avalonia;
 
-public sealed class App : Avalonia.Application
+public sealed class App : global::Avalonia.Application
 {
     private ServiceProvider? _services;
 

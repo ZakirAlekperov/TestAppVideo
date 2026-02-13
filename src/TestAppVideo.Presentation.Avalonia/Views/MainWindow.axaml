@@ -9,7 +9,12 @@
     <vm:MainWindowViewModel />
   </Design.DataContext>
 
-  <Grid RowDefinitions="Auto,Auto,*,Auto" ColumnDefinitions="*,*" Margin="16" RowSpacing="12" ColumnSpacing="12">
+  <Grid RowDefinitions="Auto,Auto,*,Auto" ColumnDefinitions="*,*" Margin="16">
+    <Grid.Styles>
+      <Style Selector="Grid > :is(Control)">
+        <Setter Property="Margin" Value="0,6" />
+      </Style>
+    </Grid.Styles>
 
     <TextBlock Grid.Row="0" Grid.ColumnSpan="2" FontSize="22" Text="Video splitting" />
 
