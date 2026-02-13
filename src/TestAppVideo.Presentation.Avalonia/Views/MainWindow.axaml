@@ -27,7 +27,7 @@
         <!-- Заголовок -->
         <StackPanel Grid.Row="0">
           <TextBlock FontSize="32" FontWeight="Bold" Foreground="#1976D2" Text="Разделение видео" />
-          <TextBlock FontSize="14" Foreground="#757575" Text="Быстрое и удобное разделение видеофайлов на сегменты" />
+          <TextBlock FontSize="14" Foreground="#757575" Text="Быстрое и удобное разделение видеофайлов на равные части" />
         </StackPanel>
 
         <!-- Настройки -->
@@ -69,7 +69,7 @@
               </Grid>
             </StackPanel>
 
-            <!-- Режим разделения -->
+            <!-- Настройки разделения -->
             <Grid ColumnDefinitions="*,*">
               <Grid.Styles>
                 <Style Selector="Grid > :is(Control)">
@@ -78,21 +78,16 @@
               </Grid.Styles>
               
               <StackPanel Grid.Column="0" Spacing="8">
-                <TextBlock Text="Режим разделения" FontSize="14" FontWeight="SemiBold" Foreground="#424242" />
-                <ComboBox SelectedIndex="{Binding ModeIndex}" HorizontalAlignment="Stretch">
-                  <ComboBoxItem Content="Равные части" />
-                  <ComboBoxItem Content="Фиксированная длительность" />
-                </ComboBox>
+                <TextBlock Text="Количество частей" FontSize="14" FontWeight="SemiBold" Foreground="#424242" />
+                <NumericUpDown Minimum="2" Maximum="100" Value="{Binding NumberOfParts}" HorizontalAlignment="Stretch" />
               </StackPanel>
 
               <StackPanel Grid.Column="1" Spacing="8" Margin="8,0,0,0">
-                <TextBlock FontSize="14" FontWeight="SemiBold" Foreground="#424242">
-                  <Run Text="Количество частей" />
-                  <Run Text=" / " Foreground="#BDBDBD" />
-                  <Run Text="Длительность (сек)" />
-                </TextBlock>
-                <NumericUpDown Minimum="1" Maximum="1000" Value="{Binding NumberOfParts}" IsVisible="{Binding ModeIndex, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=0}" />
-                <NumericUpDown Minimum="1" Maximum="86400" Value="{Binding SegmentDurationSeconds}" IsVisible="{Binding ModeIndex, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=1}" />
+                <TextBlock Text="Кодек видео" FontSize="14" FontWeight="SemiBold" Foreground="#424242" />
+                <ComboBox SelectedIndex="{Binding CodecModeIndex}" HorizontalAlignment="Stretch">
+                  <ComboBoxItem Content="Исходный (быстро, без потерь)" />
+                  <ComboBoxItem Content="Сжатый для соцсетей (H.264)" />
+                </ComboBox>
               </StackPanel>
             </Grid>
 

@@ -10,5 +10,6 @@ public interface IVideoProcessor
         IReadOnlyList<VideoSegment> segments,
         OutputDirectory outputDirectory,
         IVideoProcessingProgress progress,
+        bool useCompression,
         CancellationToken cancellationToken);
 }

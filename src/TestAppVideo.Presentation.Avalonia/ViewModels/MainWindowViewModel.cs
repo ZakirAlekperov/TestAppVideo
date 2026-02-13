@@ -30,13 +30,6 @@ public sealed class MainWindowViewModel : ViewModelBase
         set => SetProperty(ref _outputDirectory, value);
     }
 
-    private int _modeIndex;
-    public int ModeIndex
-    {
-        get => _modeIndex;
-        set => SetProperty(ref _modeIndex, value);
-    }
-
     private int _numberOfParts = 4;
     public int NumberOfParts
     {
@@ -44,11 +37,11 @@ public sealed class MainWindowViewModel : ViewModelBase
         set => SetProperty(ref _numberOfParts, value);
     }
 
-    private int _segmentDurationSeconds = 60;
-    public int SegmentDurationSeconds
+    private int _codecModeIndex = 0;
+    public int CodecModeIndex
     {
-        get => _segmentDurationSeconds;
-        set => SetProperty(ref _segmentDurationSeconds, value);
+        get => _codecModeIndex;
+        set => SetProperty(ref _codecModeIndex, value);
     }
 
     private string _status = "Готов к работе";
@@ -252,7 +245,8 @@ public sealed class MainWindowViewModel : ViewModelBase
             {
                 FilePath = InputFilePath,
                 OutputDirectory = OutputDirectory,
-                SplittingParameters = parameters
+                SplittingParameters = parameters,
+                UseCompression = CodecModeIndex == 1
             }, progress, _cts.Token);
 
             if (!response.Success)
@@ -279,21 +273,10 @@ public sealed class MainWindowViewModel : ViewModelBase
 
     private SplittingParametersDto BuildParameters()
     {
-        var mode = ModeIndex == 0 ? SplittingMode.EqualParts : SplittingMode.FixedDuration;
-
-        if (mode == SplittingMode.EqualParts)
-        {
-            return new SplittingParametersDto
-            {
-                Mode = SplittingMode.EqualParts,
-                NumberOfParts = NumberOfParts
-            };
-        }
-
         return new SplittingParametersDto
         {
-            Mode = SplittingMode.FixedDuration,
-            SegmentDuration = TimeSpan.FromSeconds(SegmentDurationSeconds)
+            Mode = SplittingMode.EqualParts,
+            NumberOfParts = NumberOfParts
         };
     }
 

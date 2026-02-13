@@ -1,10 +1,9 @@
 namespace TestAppVideo.Application.UseCases.SplitVideo;
 
-using TestAppVideo.Application.DTOs;
-
-public sealed class SplitVideoRequest
+public sealed record SplitVideoRequest
 {
-    public string FilePath { get; init; } = string.Empty;
-    public string OutputDirectory { get; init; } = string.Empty;
-    public SplittingParametersDto? SplittingParameters { get; init; }
+    public required string FilePath { get; init; }
+    public required string OutputDirectory { get; init; }
+    public required SplittingParametersDto SplittingParameters { get; init; }
+    public bool UseCompression { get; init; } = false;
 }
