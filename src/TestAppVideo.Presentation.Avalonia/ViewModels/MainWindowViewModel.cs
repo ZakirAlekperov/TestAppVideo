@@ -1,5 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Windows.Input;
+using Avalonia.Controls;
+using Avalonia.Platform.Storage;
 using TestAppVideo.Application.DTOs;
 using TestAppVideo.Application.Services;
 using TestAppVideo.Application.UseCases.LoadVideoMetadata;
@@ -12,6 +14,7 @@ namespace TestAppVideo.Presentation.Avalonia.ViewModels;
 public sealed class MainWindowViewModel : ViewModelBase
 {
     private readonly IVideoEditorApplicationService _app;
+    private Window? _window;
 
     private string _inputFilePath = string.Empty;
     public string InputFilePath
@@ -27,7 +30,6 @@ public sealed class MainWindowViewModel : ViewModelBase
         set => SetProperty(ref _outputDirectory, value);
     }
 
-    // Для предсказуемого UI-binding используем SelectedIndex.
     private int _modeIndex;
     public int ModeIndex
     {
@@ -49,7 +51,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         set => SetProperty(ref _segmentDurationSeconds, value);
     }
 
-    private string _status = "";
+    private string _status = "Готов к работе";
     public string Status
     {
         get => _status;
@@ -95,6 +97,8 @@ public sealed class MainWindowViewModel : ViewModelBase
 
     public ObservableCollection<VideoSegmentDto> PreviewSegments { get; } = new();
 
+    public ICommand BrowseInputFileCommand { get; }
+    public ICommand BrowseOutputFolderCommand { get; }
     public ICommand LoadMetadataCommand { get; }
     public ICommand PreviewCommand { get; }
     public ICommand SplitCommand { get; }
@@ -106,15 +110,78 @@ public sealed class MainWindowViewModel : ViewModelBase
     {
         _app = app ?? throw new ArgumentNullException(nameof(app));
 
+        BrowseInputFileCommand = new AsyncCommand(BrowseInputFileAsync, () => !IsProcessing);
+        BrowseOutputFolderCommand = new AsyncCommand(BrowseOutputFolderAsync, () => !IsProcessing);
         LoadMetadataCommand = new AsyncCommand(LoadMetadataAsync, () => !IsProcessing);
         PreviewCommand = new AsyncCommand(PreviewAsync, () => !IsProcessing && LoadedVideo is not null);
         SplitCommand = new AsyncCommand(SplitAsync, () => !IsProcessing && LoadedVideo is not null);
         CancelCommand = new Command(Cancel, () => IsProcessing);
     }
 
+    public void SetWindow(Window window)
+    {
+        _window = window;
+    }
+
+    private async Task BrowseInputFileAsync()
+    {
+        if (_window is null) return;
+
+        var storageProvider = _window.StorageProvider;
+        if (!storageProvider.CanOpen) return;
+
+        var options = new FilePickerOpenOptions
+        {
+            Title = "Выберите видеофайл",
+            AllowMultiple = false,
+            FileTypeFilter = new[]
+            {
+                new FilePickerFileType("Видеофайлы")
+                {
+                    Patterns = new[] { "*.mp4", "*.avi", "*.mkv", "*.mov", "*.wmv", "*.flv", "*.webm" },
+                    MimeTypes = new[] { "video/*" }
+                },
+                new FilePickerFileType("Все файлы")
+                {
+                    Patterns = new[] { "*.*" }
+                }
+            }
+        };
+
+        var result = await storageProvider.OpenFilePickerAsync(options);
+        if (result.Count > 0)
+        {
+            InputFilePath = result[0].Path.LocalPath;
+            if (string.IsNullOrWhiteSpace(OutputDirectory))
+            {
+                OutputDirectory = Path.GetDirectoryName(InputFilePath) ?? string.Empty;
+            }
+        }
+    }
+
+    private async Task BrowseOutputFolderAsync()
+    {
+        if (_window is null) return;
+
+        var storageProvider = _window.StorageProvider;
+        if (!storageProvider.CanPickFolder) return;
+
+        var options = new FolderPickerOpenOptions
+        {
+            Title = "Выберите папку для сохранения",
+            AllowMultiple = false
+        };
+
+        var result = await storageProvider.OpenFolderPickerAsync(options);
+        if (result.Count > 0)
+        {
+            OutputDirectory = result[0].Path.LocalPath;
+        }
+    }
+
     private async Task LoadMetadataAsync()
     {
-        Status = "Loading metadata...";
+        Status = "Загрузка метаданных...";
         Progress = 0;
 
         var response = await _app.LoadVideoMetadataAsync(new LoadVideoMetadataRequest(InputFilePath), CancellationToken.None);
@@ -126,7 +193,7 @@ public sealed class MainWindowViewModel : ViewModelBase
         }
 
         LoadedVideo = response.VideoFile;
-        Status = $"Loaded: {LoadedVideo!.FileName} ({LoadedVideo.Duration})";
+        Status = $"Загружено: {LoadedVideo!.FileName} ({LoadedVideo.Duration})";
 
         if (string.IsNullOrWhiteSpace(OutputDirectory))
             OutputDirectory = Path.GetDirectoryName(InputFilePath) ?? string.Empty;
@@ -136,7 +203,7 @@ public sealed class MainWindowViewModel : ViewModelBase
 
     private async Task PreviewAsync()
     {
-        Status = "Calculating preview...";
+        Status = "Расчёт предпросмотра...";
 
         var parameters = BuildParameters();
         var response = await _app.PreviewSplitAsync(new PreviewSplitRequest
@@ -156,14 +223,14 @@ public sealed class MainWindowViewModel : ViewModelBase
         foreach (var s in response.Segments)
             PreviewSegments.Add(s);
 
-        Status = $"Preview: {PreviewSegments.Count} segments";
+        Status = $"Предпросмотр: {PreviewSegments.Count} сегментов";
     }
 
     private async Task SplitAsync()
     {
         IsProcessing = true;
         Progress = 0;
-        Status = "Processing...";
+        Status = "Обработка...";
 
         _cts = new CancellationTokenSource();
 
@@ -174,11 +241,11 @@ public sealed class MainWindowViewModel : ViewModelBase
             var progress = new UiProgress(
                 onProgress: (current, total, percent) =>
                 {
-                    Status = $"Segment {current}/{total} ({percent:0.0}%)";
+                    Status = $"Сегмент {current}/{total} ({percent:0.0}%)";
                     Progress = ((current - 1) * 100.0 + percent) / total;
                 },
                 onCompleted: (segment, path) => { },
-                onError: (segment, ex) => { Status = $"Error in segment {segment}: {ex.Message}"; }
+                onError: (segment, ex) => { Status = $"Ошибка в сегменте {segment}: {ex.Message}"; }
             );
 
             var response = await _app.SplitVideoAsync(new SplitVideoRequest
@@ -195,7 +262,7 @@ public sealed class MainWindowViewModel : ViewModelBase
             }
 
             Progress = 100;
-            Status = $"Done. Files: {response.Result!.SegmentsCreated}, time: {response.Result.TotalProcessingTime}";
+            Status = $"Готово! Файлов: {response.Result!.SegmentsCreated}, время: {response.Result.TotalProcessingTime}";
         }
         finally
         {

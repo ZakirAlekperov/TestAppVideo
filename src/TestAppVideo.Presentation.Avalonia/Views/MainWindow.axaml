@@ -1,148 +1,242 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:TestAppVideo.Presentation.Avalonia.ViewModels"
+        xmlns:assists="clr-namespace:Material.Styles.Assists;assembly=Material.Styles"
         x:Class="TestAppVideo.Presentation.Avalonia.Views.MainWindow"
-        Width="950" Height="700"
-        Title="Видеоредактор - Разделение видео">
+        Width="1000" Height="720"
+        Title="Видеоредактор - Разделение видео"
+        Background="#FAFAFA">
 
   <Design.DataContext>
     <vm:MainWindowViewModel />
   </Design.DataContext>
 
-  <TabControl>
+  <TabControl Classes="Colorful">
     <!-- Вкладка обработки видео -->
-    <TabItem Header="Обработка видео">
-      <Grid RowDefinitions="Auto,Auto,*,Auto" ColumnDefinitions="*,*" Margin="16">
-        <Grid.Styles>
-          <Style Selector="Grid > :is(Control)">
-            <Setter Property="Margin" Value="0,6" />
-          </Style>
-        </Grid.Styles>
-
-        <TextBlock Grid.Row="0" Grid.ColumnSpan="2" FontSize="22" Text="Разделение видео" />
-
-        <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Spacing="8">
-          <TextBlock Text="Путь к видеофайлу" />
-          <TextBox Text="{Binding InputFilePath}" Watermark="/путь/к/видео.mp4" />
-
-          <TextBlock Text="Папка для сохранения результатов" />
-          <TextBox Text="{Binding OutputDirectory}" Watermark="/путь/к/папке" />
+    <TabItem>
+      <TabItem.Header>
+        <TextBlock Text="Обработка видео" FontSize="14" FontWeight="SemiBold" />
+      </TabItem.Header>
+      
+      <Grid RowDefinitions="Auto,Auto,*" Margin="24">
+        <!-- Заголовок -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,24">
+          <TextBlock FontSize="32" FontWeight="Bold" Foreground="#1976D2" Text="Разделение видео" />
+          <TextBlock FontSize="14" Foreground="#757575" Text="Быстрое и удобное разделение видеофайлов на сегменты" />
         </StackPanel>
 
-        <StackPanel Grid.Row="2" Grid.Column="0" Spacing="10">
-          <TextBlock FontSize="16" Text="Настройки разделения" />
+        <!-- Настройки -->
+        <Border Grid.Row="1" Background="White" CornerRadius="12" BoxShadow="0 2 8 0 #20000000" Padding="24" Margin="0,0,0,16">
+          <StackPanel Spacing="20">
+            <!-- Выбор видеофайла -->
+            <StackPanel Spacing="8">
+              <TextBlock Text="Видеофайл" FontSize="14" FontWeight="SemiBold" Foreground="#424242" />
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBox Grid.Column="0" Text="{Binding InputFilePath}" 
+                         Watermark="Выберите видеофайл..."
+                         IsReadOnly="True"
+                         assists:TextFieldAssist.Label="Путь к файлу"
+                         Margin="0,0,12,0" />
+                <Button Grid.Column="1" Content="Обзор" 
+                        Command="{Binding BrowseInputFileCommand}"
+                        Classes="Flat"
+                        Padding="20,10"
+                        Background="#1976D2"
+                        Foreground="White"
+                        FontWeight="SemiBold" />
+              </Grid>
+            </StackPanel>
 
-          <StackPanel Orientation="Horizontal" Spacing="8">
-            <TextBlock VerticalAlignment="Center" Text="Режим:" />
-            <ComboBox SelectedIndex="{Binding ModeIndex}" Width="220">
-              <ComboBoxItem Content="Равные части" />
-              <ComboBoxItem Content="Фиксированная длительность" />
-            </ComboBox>
+            <!-- Выбор папки -->
+            <StackPanel Spacing="8">
+              <TextBlock Text="Папка для сохранения" FontSize="14" FontWeight="SemiBold" Foreground="#424242" />
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBox Grid.Column="0" Text="{Binding OutputDirectory}" 
+                         Watermark="Выберите папку..."
+                         IsReadOnly="True"
+                         assists:TextFieldAssist.Label="Путь к папке"
+                         Margin="0,0,12,0" />
+                <Button Grid.Column="1" Content="Обзор" 
+                        Command="{Binding BrowseOutputFolderCommand}"
+                        Classes="Flat"
+                        Padding="20,10"
+                        Background="#1976D2"
+                        Foreground="White"
+                        FontWeight="SemiBold" />
+              </Grid>
+            </StackPanel>
+
+            <!-- Режим разделения -->
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
+              <StackPanel Grid.Column="0" Spacing="8">
+                <TextBlock Text="Режим разделения" FontSize="14" FontWeight="SemiBold" Foreground="#424242" />
+                <ComboBox SelectedIndex="{Binding ModeIndex}" HorizontalAlignment="Stretch">
+                  <ComboBoxItem Content="Равные части" />
+                  <ComboBoxItem Content="Фиксированная длительность" />
+                </ComboBox>
+              </StackPanel>
+
+              <StackPanel Grid.Column="1" Spacing="8">
+                <TextBlock FontSize="14" FontWeight="SemiBold" Foreground="#424242">
+                  <TextBlock.Text>
+                    <MultiBinding StringFormat="{}">
+                      <Binding Path="ModeIndex" />
+                      <Binding Source="Количество частей" />
+                      <Binding Source="Длительность (сек)" />
+                    </MultiBinding>
+                  </TextBlock.Text>
+                  <Run Text="Количество частей" />
+                  <Run Text=" / " Foreground="#BDBDBD" />
+                  <Run Text="Длительность (сек)" />
+                </TextBlock>
+                <NumericUpDown Minimum="1" Maximum="86400" 
+                               Value="{Binding ModeIndex, Converter={StaticResource ModeToValueConverter}}" />
+                <NumericUpDown Minimum="1" Maximum="1000" Value="{Binding NumberOfParts}" IsVisible="{Binding ModeIndex, Converter={StaticResource EqualToConverter}, ConverterParameter=0}" />
+                <NumericUpDown Minimum="1" Maximum="86400" Value="{Binding SegmentDurationSeconds}" IsVisible="{Binding ModeIndex, Converter={StaticResource EqualToConverter}, ConverterParameter=1}" />
+              </StackPanel>
+            </Grid>
+
+            <!-- Кнопки действий -->
+            <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="12" Margin="0,8,0,0">
+              <Button Grid.Column="0" Content="Загрузить метаданные" 
+                      Command="{Binding LoadMetadataCommand}"
+                      Background="#4CAF50"
+                      Foreground="White"
+                      Padding="0,12"
+                      FontWeight="SemiBold"
+                      HorizontalAlignment="Stretch"
+                      HorizontalContentAlignment="Center" />
+              <Button Grid.Column="1" Content="Предпросмотр" 
+                      Command="{Binding PreviewCommand}"
+                      Background="#FF9800"
+                      Foreground="White"
+                      Padding="0,12"
+                      FontWeight="SemiBold"
+                      HorizontalAlignment="Stretch"
+                      HorizontalContentAlignment="Center" />
+              <Button Grid.Column="2" Content="Разделить" 
+                      Command="{Binding SplitCommand}"
+                      Background="#2196F3"
+                      Foreground="White"
+                      Padding="0,12"
+                      FontWeight="SemiBold"
+                      HorizontalAlignment="Stretch"
+                      HorizontalContentAlignment="Center" />
+              <Button Grid.Column="3" Content="Отмена" 
+                      Command="{Binding CancelCommand}"
+                      Background="#F44336"
+                      Foreground="White"
+                      Padding="0,12"
+                      FontWeight="SemiBold"
+                      HorizontalAlignment="Stretch"
+                      HorizontalContentAlignment="Center" />
+            </Grid>
+
+            <!-- Прогресс -->
+            <StackPanel Spacing="8">
+              <ProgressBar Minimum="0" Maximum="100" Value="{Binding Progress}" Height="8" CornerRadius="4" />
+              <TextBlock Text="{Binding Status}" TextWrapping="Wrap" FontSize="13" Foreground="#616161" />
+            </StackPanel>
           </StackPanel>
+        </Border>
 
-          <TextBlock Text="Количество частей (равные части)" />
-          <NumericUpDown Minimum="1" Maximum="1000" Value="{Binding NumberOfParts}" />
-
-          <TextBlock Text="Длительность сегмента в секундах (фиксированная длительность)" />
-          <NumericUpDown Minimum="1" Maximum="86400" Value="{Binding SegmentDurationSeconds}" />
-
-          <StackPanel Orientation="Horizontal" Spacing="8">
-            <Button Content="Загрузить метаданные" Command="{Binding LoadMetadataCommand}" />
-            <Button Content="Предпросмотр" Command="{Binding PreviewCommand}" />
-          </StackPanel>
-
-          <StackPanel Orientation="Horizontal" Spacing="8">
-            <Button Content="Разделить" Command="{Binding SplitCommand}" />
-            <Button Content="Отмена" Command="{Binding CancelCommand}" />
-          </StackPanel>
-
-          <ProgressBar Minimum="0" Maximum="100" Value="{Binding Progress}" Height="12" />
-          <TextBlock Text="{Binding Status}" TextWrapping="Wrap" />
-        </StackPanel>
-
-        <StackPanel Grid.Row="2" Grid.Column="1" Spacing="8">
-          <TextBlock FontSize="16" Text="Предпросмотр сегментов" />
-          <DataGrid ItemsSource="{Binding PreviewSegments}" AutoGenerateColumns="False" IsReadOnly="True">
-            <DataGrid.Columns>
-              <DataGridTextColumn Header="№" Binding="{Binding SegmentNumber}" Width="60" />
-              <DataGridTextColumn Header="Начало" Binding="{Binding Start}" Width="*" />
-              <DataGridTextColumn Header="Конец" Binding="{Binding End}" Width="*" />
-              <DataGridTextColumn Header="Имя файла" Binding="{Binding OutputFileName}" Width="2*" />
-            </DataGrid.Columns>
-          </DataGrid>
-        </StackPanel>
-
+        <!-- Предпросмотр -->
+        <Border Grid.Row="2" Background="White" CornerRadius="12" BoxShadow="0 2 8 0 #20000000" Padding="24">
+          <Grid RowDefinitions="Auto,*">
+            <TextBlock Grid.Row="0" FontSize="18" FontWeight="SemiBold" Foreground="#424242" Text="Предпросмотр сегментов" Margin="0,0,0,16" />
+            <DataGrid Grid.Row="1" ItemsSource="{Binding PreviewSegments}" 
+                      AutoGenerateColumns="False" 
+                      IsReadOnly="True"
+                      GridLinesVisibility="None"
+                      Background="Transparent"
+                      CanUserResizeColumns="True">
+              <DataGrid.Columns>
+                <DataGridTextColumn Header="№" Binding="{Binding SegmentNumber}" Width="80" />
+                <DataGridTextColumn Header="Начало" Binding="{Binding Start}" Width="*" />
+                <DataGridTextColumn Header="Конец" Binding="{Binding End}" Width="*" />
+                <DataGridTextColumn Header="Имя файла" Binding="{Binding OutputFileName}" Width="2*" />
+              </DataGrid.Columns>
+            </DataGrid>
+          </Grid>
+        </Border>
       </Grid>
     </TabItem>
 
     <!-- Вкладка О программе -->
-    <TabItem Header="О программе">
+    <TabItem>
+      <TabItem.Header>
+        <TextBlock Text="О программе" FontSize="14" FontWeight="SemiBold" />
+      </TabItem.Header>
+      
       <ScrollViewer>
-        <StackPanel Margin="32" Spacing="16" MaxWidth="700">
-          <TextBlock FontSize="24" FontWeight="Bold" Text="Видеоредактор - Разделение видео" />
-          <TextBlock FontSize="14" Foreground="Gray" Text="Кросс-платформенное приложение для быстрого разделения видео" />
+        <Border Background="White" CornerRadius="12" BoxShadow="0 2 8 0 #20000000" Margin="24" Padding="32">
+          <StackPanel Spacing="20" MaxWidth="800">
+            <StackPanel Spacing="8">
+              <TextBlock FontSize="32" FontWeight="Bold" Foreground="#1976D2" Text="Видеоредактор" />
+              <TextBlock FontSize="16" Foreground="#757575" Text="Кросс-платформенное приложение для разделения видео" />
+            </StackPanel>
 
-          <Separator Margin="0,8" />
+            <Border Height="2" Background="#E0E0E0" CornerRadius="1" />
 
-          <TextBlock FontSize="18" FontWeight="SemiBold" Text="Автор" />
-          <TextBlock FontSize="14" Text="Закир Алекперов" />
+            <StackPanel Spacing="8">
+              <TextBlock FontSize="20" FontWeight="SemiBold" Foreground="#424242" Text="Автор" />
+              <TextBlock FontSize="16" Foreground="#616161" Text="Закир Алекперов" />
+            </StackPanel>
 
-          <Separator Margin="0,8" />
+            <Border Height="2" Background="#E0E0E0" CornerRadius="1" />
 
-          <TextBlock FontSize="18" FontWeight="SemiBold" Text="Архитектура приложения" />
-          <TextBlock TextWrapping="Wrap" FontSize="13" Text="Приложение построено на основе Clean Architecture с явным разделением ответственности между слоями:" />
+            <StackPanel Spacing="12">
+              <TextBlock FontSize="20" FontWeight="SemiBold" Foreground="#424242" Text="Архитектура приложения" />
+              <TextBlock TextWrapping="Wrap" FontSize="14" Foreground="#616161" Text="Приложение построено на основе Clean Architecture с явным разделением ответственности между слоями:" />
 
-          <StackPanel Spacing="8" Margin="16,0,0,0">
-            <TextBlock TextWrapping="Wrap" FontSize="13">
-              <Run FontWeight="SemiBold">Domain Layer (Ядро)</Run>
-              <LineBreak />
-              Содержит доменные модели (Video, VideoSegment, VideoMetadata), бизнес-правила и инварианты. Не зависит от внешних библиотек и инфраструктуры. Определяет порты (интерфейсы) для работы с видео и файловой системой.
-            </TextBlock>
+              <StackPanel Spacing="16" Margin="16,8,0,0">
+                <Border Background="#E3F2FD" CornerRadius="8" Padding="16">
+                  <StackPanel Spacing="6">
+                    <TextBlock FontWeight="SemiBold" FontSize="15" Foreground="#1976D2" Text="Domain Layer (Ядро)" />
+                    <TextBlock TextWrapping="Wrap" FontSize="13" Foreground="#424242" Text="Содержит доменные модели, бизнес-правила и инварианты. Не зависит от внешних библиотек." />
+                  </StackPanel>
+                </Border>
 
-            <TextBlock TextWrapping="Wrap" FontSize="13">
-              <Run FontWeight="SemiBold">Application Layer (Сценарии использования)</Run>
-              <LineBreak />
-              Оркестрирует use cases (загрузка метаданных, предпросмотр разделения, обработка видео). Содержит DTOs для передачи данных между слоями и валидацию входных параметров. Зависит только от Domain Layer.
-            </TextBlock>
+                <Border Background="#F3E5F5" CornerRadius="8" Padding="16">
+                  <StackPanel Spacing="6">
+                    <TextBlock FontWeight="SemiBold" FontSize="15" Foreground="#7B1FA2" Text="Application Layer (Сценарии)" />
+                    <TextBlock TextWrapping="Wrap" FontSize="13" Foreground="#424242" Text="Оркестрирует use cases, содержит DTOs и валидацию. Зависит только от Domain." />
+                  </StackPanel>
+                </Border>
 
-            <TextBlock TextWrapping="Wrap" FontSize="13">
-              <Run FontWeight="SemiBold">Infrastructure Layer (Инфраструктура)</Run>
-              <LineBreak />
-              Реализует адаптеры для работы с FFmpeg (через библиотеку FFMpegCore) и файловой системой. Изолирует внешние зависимости от бизнес-логики. Может быть заменён без изменения ядра приложения.
-            </TextBlock>
+                <Border Background="#E8F5E9" CornerRadius="8" Padding="16">
+                  <StackPanel Spacing="6">
+                    <TextBlock FontWeight="SemiBold" FontSize="15" Foreground="#388E3C" Text="Infrastructure Layer (Инфраструктура)" />
+                    <TextBlock TextWrapping="Wrap" FontSize="13" Foreground="#424242" Text="Реализует адаптеры для FFmpeg и файловой системы. Изолирует внешние зависимости." />
+                  </StackPanel>
+                </Border>
 
-            <TextBlock TextWrapping="Wrap" FontSize="13">
-              <Run FontWeight="SemiBold">Presentation Layer (Пользовательский интерфейс)</Run>
-              <LineBreak />
-              Реализован на Avalonia UI с применением паттерна MVVM. Обеспечивает кросс-платформенность (Windows, macOS, Linux). Взаимодействует с приложением через application service (фасад).
-            </TextBlock>
+                <Border Background="#FFF3E0" CornerRadius="8" Padding="16">
+                  <StackPanel Spacing="6">
+                    <TextBlock FontWeight="SemiBold" FontSize="15" Foreground="#F57C00" Text="Presentation Layer (UI)" />
+                    <TextBlock TextWrapping="Wrap" FontSize="13" Foreground="#424242" Text="Avalonia UI с MVVM. Обеспечивает кросс-платформенность (Windows, macOS, Linux)." />
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+            </StackPanel>
+
+            <Border Height="2" Background="#E0E0E0" CornerRadius="1" />
+
+            <StackPanel Spacing="12">
+              <TextBlock FontSize="20" FontWeight="SemiBold" Foreground="#424242" Text="Технологии" />
+              <StackPanel Spacing="6" Margin="16,0,0,0">
+                <TextBlock FontSize="14" Foreground="#616161" Text="• .NET 10" />
+                <TextBlock FontSize="14" Foreground="#616161" Text="• Avalonia UI 11.0.10 + Material Design" />
+                <TextBlock FontSize="14" Foreground="#616161" Text="• FFMpegCore 5.1.0" />
+                <TextBlock FontSize="14" Foreground="#616161" Text="• Dependency Injection" />
+              </StackPanel>
+            </StackPanel>
+
+            <Border Height="2" Background="#E0E0E0" CornerRadius="1" />
+
+            <TextBlock FontSize="13" Foreground="#9E9E9E" TextWrapping="Wrap" Text="Для работы требуется FFmpeg в системе (PATH)." />
           </StackPanel>
-
-          <Separator Margin="0,8" />
-
-          <TextBlock FontSize="18" FontWeight="SemiBold" Text="Принципы разработки" />
-          <StackPanel Spacing="4" Margin="16,0,0,0">
-            <TextBlock TextWrapping="Wrap" FontSize="13" Text="• Явные зависимости через интерфейсы (Dependency Injection)" />
-            <TextBlock TextWrapping="Wrap" FontSize="13" Text="• Изоляция платформенно-специфичного кода" />
-            <TextBlock TextWrapping="Wrap" FontSize="13" Text="• Предсказуемость и читаемость кода" />
-            <TextBlock TextWrapping="Wrap" FontSize="13" Text="• Тестируемость всех компонентов" />
-            <TextBlock TextWrapping="Wrap" FontSize="13" Text="• Готовность к масштабированию функциональности" />
-          </StackPanel>
-
-          <Separator Margin="0,8" />
-
-          <TextBlock FontSize="18" FontWeight="SemiBold" Text="Технологии" />
-          <StackPanel Spacing="4" Margin="16,0,0,0">
-            <TextBlock FontSize="13" Text="• .NET 10" />
-            <TextBlock FontSize="13" Text="• Avalonia UI 11.0.10" />
-            <TextBlock FontSize="13" Text="• FFMpegCore 5.1.0 (обёртка над FFmpeg)" />
-            <TextBlock FontSize="13" Text="• Microsoft.Extensions.DependencyInjection" />
-          </StackPanel>
-
-          <Separator Margin="0,8" />
-
-          <TextBlock FontSize="12" Foreground="Gray" TextWrapping="Wrap" Text="Для работы приложения требуется установленный FFmpeg в системе (доступный в PATH)." />
-        </StackPanel>
+        </Border>
       </ScrollViewer>
     </TabItem>
   </TabControl>

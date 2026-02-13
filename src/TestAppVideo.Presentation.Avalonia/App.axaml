@@ -1,10 +1,11 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="TestAppVideo.Presentation.Avalonia.App"
-             RequestedThemeVariant="Default">
+             RequestedThemeVariant="Light">
 
   <Application.Styles>
-    <FluentTheme />
+    <StyleInclude Source="avares://Material.Avalonia/Material.Avalonia.Templates.xaml" />
+    <StyleInclude Source="avares://Material.Styles/Themes/Material.Deep.xaml" />
   </Application.Styles>
 
 </Application>
