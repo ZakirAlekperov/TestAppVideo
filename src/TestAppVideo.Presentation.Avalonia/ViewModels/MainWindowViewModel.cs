@@ -223,7 +223,9 @@ public sealed class MainWindowViewModel : ViewModelBase
     {
         IsProcessing = true;
         Progress = 0;
-        Status = "Обработка...";
+        
+        var codecMode = CodecModeIndex == 1 ? "СЖАТИЕ H.264" : "ИСХОДНЫЙ КОДЕК";
+        Status = $"Обработка... [Режим: {codecMode}]";
 
         _cts = new CancellationTokenSource();
 
@@ -234,7 +236,7 @@ public sealed class MainWindowViewModel : ViewModelBase
             var progress = new UiProgress(
                 onProgress: (current, total, percent) =>
                 {
-                    Status = $"Сегмент {current}/{total} ({percent:0.0}%)";
+                    Status = $"[{codecMode}] Сегмент {current}/{total} ({percent:0.0}%)";
                     Progress = ((current - 1) * 100.0 + percent) / total;
                 },
                 onCompleted: (segment, path) => { },
@@ -256,7 +258,7 @@ public sealed class MainWindowViewModel : ViewModelBase
             }
 
             Progress = 100;
-            Status = $"Готово! Файлов: {response.Result!.SegmentsCreated}, время: {response.Result.TotalProcessingTime}";
+            Status = $"Готово! [{codecMode}] Файлов: {response.Result!.SegmentsCreated}, время: {response.Result.TotalProcessingTime}";
         }
         finally
         {
