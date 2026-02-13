@@ -4,8 +4,16 @@
              RequestedThemeVariant="Light">
 
   <Application.Styles>
-    <StyleInclude Source="avares://Material.Avalonia/Material.Avalonia.Templates.xaml" />
-    <StyleInclude Source="avares://Material.Styles/Themes/Material.Deep.xaml" />
+    <FluentTheme />
   </Application.Styles>
+
+  <Application.Resources>
+    <ResourceDictionary>
+      <SolidColorBrush x:Key="PrimaryBrush" Color="#1976D2" />
+      <SolidColorBrush x:Key="SuccessBrush" Color="#4CAF50" />
+      <SolidColorBrush x:Key="WarningBrush" Color="#FF9800" />
+      <SolidColorBrush x:Key="ErrorBrush" Color="#F44336" />
+    </ResourceDictionary>
+  </Application.Resources>
 
 </Application>

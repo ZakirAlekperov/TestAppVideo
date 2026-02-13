@@ -1,7 +1,6 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:TestAppVideo.Presentation.Avalonia.ViewModels"
-        xmlns:assists="clr-namespace:Material.Styles.Assists;assembly=Material.Styles"
         x:Class="TestAppVideo.Presentation.Avalonia.Views.MainWindow"
         Width="1000" Height="720"
         Title="Видеоредактор - Разделение видео"
@@ -11,22 +10,22 @@
     <vm:MainWindowViewModel />
   </Design.DataContext>
 
-  <TabControl Classes="Colorful">
+  <TabControl>
     <!-- Вкладка обработки видео -->
     <TabItem>
       <TabItem.Header>
         <TextBlock Text="Обработка видео" FontSize="14" FontWeight="SemiBold" />
       </TabItem.Header>
       
-      <Grid RowDefinitions="Auto,Auto,*" Margin="24">
+      <Grid RowDefinitions="Auto,Auto,*" Margin="24" RowSpacing="16">
         <!-- Заголовок -->
-        <StackPanel Grid.Row="0" Margin="0,0,0,24">
+        <StackPanel Grid.Row="0">
           <TextBlock FontSize="32" FontWeight="Bold" Foreground="#1976D2" Text="Разделение видео" />
           <TextBlock FontSize="14" Foreground="#757575" Text="Быстрое и удобное разделение видеофайлов на сегменты" />
         </StackPanel>
 
         <!-- Настройки -->
-        <Border Grid.Row="1" Background="White" CornerRadius="12" BoxShadow="0 2 8 0 #20000000" Padding="24" Margin="0,0,0,16">
+        <Border Grid.Row="1" Background="White" CornerRadius="12" BoxShadow="0 2 8 0 #20000000" Padding="24">
           <StackPanel Spacing="20">
             <!-- Выбор видеофайла -->
             <StackPanel Spacing="8">
@@ -35,15 +34,14 @@
                 <TextBox Grid.Column="0" Text="{Binding InputFilePath}" 
                          Watermark="Выберите видеофайл..."
                          IsReadOnly="True"
-                         assists:TextFieldAssist.Label="Путь к файлу"
                          Margin="0,0,12,0" />
                 <Button Grid.Column="1" Content="Обзор" 
                         Command="{Binding BrowseInputFileCommand}"
-                        Classes="Flat"
                         Padding="20,10"
                         Background="#1976D2"
                         Foreground="White"
-                        FontWeight="SemiBold" />
+                        FontWeight="SemiBold"
+                        CornerRadius="6" />
               </Grid>
             </StackPanel>
 
@@ -54,20 +52,25 @@
                 <TextBox Grid.Column="0" Text="{Binding OutputDirectory}" 
                          Watermark="Выберите папку..."
                          IsReadOnly="True"
-                         assists:TextFieldAssist.Label="Путь к папке"
                          Margin="0,0,12,0" />
                 <Button Grid.Column="1" Content="Обзор" 
                         Command="{Binding BrowseOutputFolderCommand}"
-                        Classes="Flat"
                         Padding="20,10"
                         Background="#1976D2"
                         Foreground="White"
-                        FontWeight="SemiBold" />
+                        FontWeight="SemiBold"
+                        CornerRadius="6" />
               </Grid>
             </StackPanel>
 
             <!-- Режим разделения -->
-            <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
+            <Grid ColumnDefinitions="*,*">
+              <Grid.Styles>
+                <Style Selector="Grid > :is(Control)">
+                  <Setter Property="Margin" Value="0,0,8,0" />
+                </Style>
+              </Grid.Styles>
+              
               <StackPanel Grid.Column="0" Spacing="8">
                 <TextBlock Text="Режим разделения" FontSize="14" FontWeight="SemiBold" Foreground="#424242" />
                 <ComboBox SelectedIndex="{Binding ModeIndex}" HorizontalAlignment="Stretch">
@@ -76,60 +79,47 @@
                 </ComboBox>
               </StackPanel>
 
-              <StackPanel Grid.Column="1" Spacing="8">
+              <StackPanel Grid.Column="1" Spacing="8" Margin="8,0,0,0">
                 <TextBlock FontSize="14" FontWeight="SemiBold" Foreground="#424242">
-                  <TextBlock.Text>
-                    <MultiBinding StringFormat="{}">
-                      <Binding Path="ModeIndex" />
-                      <Binding Source="Количество частей" />
-                      <Binding Source="Длительность (сек)" />
-                    </MultiBinding>
-                  </TextBlock.Text>
                   <Run Text="Количество частей" />
                   <Run Text=" / " Foreground="#BDBDBD" />
                   <Run Text="Длительность (сек)" />
                 </TextBlock>
-                <NumericUpDown Minimum="1" Maximum="86400" 
-                               Value="{Binding ModeIndex, Converter={StaticResource ModeToValueConverter}}" />
-                <NumericUpDown Minimum="1" Maximum="1000" Value="{Binding NumberOfParts}" IsVisible="{Binding ModeIndex, Converter={StaticResource EqualToConverter}, ConverterParameter=0}" />
-                <NumericUpDown Minimum="1" Maximum="86400" Value="{Binding SegmentDurationSeconds}" IsVisible="{Binding ModeIndex, Converter={StaticResource EqualToConverter}, ConverterParameter=1}" />
+                <NumericUpDown Minimum="1" Maximum="1000" Value="{Binding NumberOfParts}" IsVisible="{Binding ModeIndex, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=0}" />
+                <NumericUpDown Minimum="1" Maximum="86400" Value="{Binding SegmentDurationSeconds}" IsVisible="{Binding ModeIndex, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=1}" />
               </StackPanel>
             </Grid>
 
             <!-- Кнопки действий -->
-            <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="12" Margin="0,8,0,0">
+            <Grid ColumnDefinitions="*,*,*,*" Margin="0,8,0,0">
+              <Grid.Styles>
+                <Style Selector="Grid > Button">
+                  <Setter Property="Margin" Value="0,0,6,0" />
+                  <Setter Property="Padding" Value="0,12" />
+                  <Setter Property="FontWeight" Value="SemiBold" />
+                  <Setter Property="HorizontalAlignment" Value="Stretch" />
+                  <Setter Property="HorizontalContentAlignment" Value="Center" />
+                  <Setter Property="CornerRadius" Value="6" />
+                </Style>
+              </Grid.Styles>
+              
               <Button Grid.Column="0" Content="Загрузить метаданные" 
                       Command="{Binding LoadMetadataCommand}"
                       Background="#4CAF50"
-                      Foreground="White"
-                      Padding="0,12"
-                      FontWeight="SemiBold"
-                      HorizontalAlignment="Stretch"
-                      HorizontalContentAlignment="Center" />
+                      Foreground="White" />
               <Button Grid.Column="1" Content="Предпросмотр" 
                       Command="{Binding PreviewCommand}"
                       Background="#FF9800"
-                      Foreground="White"
-                      Padding="0,12"
-                      FontWeight="SemiBold"
-                      HorizontalAlignment="Stretch"
-                      HorizontalContentAlignment="Center" />
+                      Foreground="White" />
               <Button Grid.Column="2" Content="Разделить" 
                       Command="{Binding SplitCommand}"
                       Background="#2196F3"
-                      Foreground="White"
-                      Padding="0,12"
-                      FontWeight="SemiBold"
-                      HorizontalAlignment="Stretch"
-                      HorizontalContentAlignment="Center" />
+                      Foreground="White" />
               <Button Grid.Column="3" Content="Отмена" 
                       Command="{Binding CancelCommand}"
                       Background="#F44336"
                       Foreground="White"
-                      Padding="0,12"
-                      FontWeight="SemiBold"
-                      HorizontalAlignment="Stretch"
-                      HorizontalContentAlignment="Center" />
+                      Margin="0" />
             </Grid>
 
             <!-- Прогресс -->
@@ -142,8 +132,8 @@
 
         <!-- Предпросмотр -->
         <Border Grid.Row="2" Background="White" CornerRadius="12" BoxShadow="0 2 8 0 #20000000" Padding="24">
-          <Grid RowDefinitions="Auto,*">
-            <TextBlock Grid.Row="0" FontSize="18" FontWeight="SemiBold" Foreground="#424242" Text="Предпросмотр сегментов" Margin="0,0,0,16" />
+          <Grid RowDefinitions="Auto,*" RowSpacing="16">
+            <TextBlock Grid.Row="0" FontSize="18" FontWeight="SemiBold" Foreground="#424242" Text="Предпросмотр сегментов" />
             <DataGrid Grid.Row="1" ItemsSource="{Binding PreviewSegments}" 
                       AutoGenerateColumns="False" 
                       IsReadOnly="True"
@@ -226,7 +216,7 @@
               <TextBlock FontSize="20" FontWeight="SemiBold" Foreground="#424242" Text="Технологии" />
               <StackPanel Spacing="6" Margin="16,0,0,0">
                 <TextBlock FontSize="14" Foreground="#616161" Text="• .NET 10" />
-                <TextBlock FontSize="14" Foreground="#616161" Text="• Avalonia UI 11.0.10 + Material Design" />
+                <TextBlock FontSize="14" Foreground="#616161" Text="• Avalonia UI 11.1.0" />
                 <TextBlock FontSize="14" Foreground="#616161" Text="• FFMpegCore 5.1.0" />
                 <TextBlock FontSize="14" Foreground="#616161" Text="• Dependency Injection" />
               </StackPanel>
