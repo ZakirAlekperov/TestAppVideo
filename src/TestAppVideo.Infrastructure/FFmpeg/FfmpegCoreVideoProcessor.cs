@@ -77,12 +77,16 @@ public sealed class FfmpegCoreVideoProcessor : IVideoProcessor
 
     private void ConfigureBinaries()
     {
-        if (!string.IsNullOrWhiteSpace(_configuration.FFmpegExecutablePath))
+        if (string.IsNullOrWhiteSpace(_configuration.FFmpegExecutablePath))
+            return;
+
+        var folder = Path.GetDirectoryName(_configuration.FFmpegExecutablePath);
+        if (string.IsNullOrWhiteSpace(folder))
+            return;
+
+        GlobalFFOptions.Configure(options =>
         {
-            GlobalFFOptions.Configure(options =>
-            {
-                options.BinaryFolder = Path.GetDirectoryName(_configuration.FFmpegExecutablePath);
-            });
-        }
+            options.BinaryFolder = folder;
+        });
     }
 }

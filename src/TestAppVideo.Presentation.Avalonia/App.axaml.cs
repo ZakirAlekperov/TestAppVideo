@@ -1,4 +1,3 @@
-using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Microsoft.Extensions.DependencyInjection;
@@ -10,7 +9,7 @@ using TestAppVideo.Presentation.Avalonia.Views;
 
 namespace TestAppVideo.Presentation.Avalonia;
 
-public sealed class App : Application
+public sealed class App : Avalonia.Application
 {
     private ServiceProvider? _services;
 
