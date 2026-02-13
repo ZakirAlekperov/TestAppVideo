@@ -1,5 +1,7 @@
 namespace TestAppVideo.Application.UseCases.SplitVideo;
 
+using TestAppVideo.Application.DTOs;
+
 public sealed record SplitVideoRequest
 {
     public required string FilePath { get; init; }
