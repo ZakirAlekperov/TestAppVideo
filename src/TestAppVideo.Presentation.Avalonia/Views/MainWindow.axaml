@@ -17,7 +17,13 @@
         <TextBlock Text="Обработка видео" FontSize="14" FontWeight="SemiBold" />
       </TabItem.Header>
       
-      <Grid RowDefinitions="Auto,Auto,*" Margin="24" RowSpacing="16">
+      <Grid RowDefinitions="Auto,Auto,*" Margin="24">
+        <Grid.Styles>
+          <Style Selector="Grid > :is(Control)">
+            <Setter Property="Margin" Value="0,0,0,16" />
+          </Style>
+        </Grid.Styles>
+        
         <!-- Заголовок -->
         <StackPanel Grid.Row="0">
           <TextBlock FontSize="32" FontWeight="Bold" Foreground="#1976D2" Text="Разделение видео" />
@@ -131,9 +137,9 @@
         </Border>
 
         <!-- Предпросмотр -->
-        <Border Grid.Row="2" Background="White" CornerRadius="12" BoxShadow="0 2 8 0 #20000000" Padding="24">
-          <Grid RowDefinitions="Auto,*" RowSpacing="16">
-            <TextBlock Grid.Row="0" FontSize="18" FontWeight="SemiBold" Foreground="#424242" Text="Предпросмотр сегментов" />
+        <Border Grid.Row="2" Background="White" CornerRadius="12" BoxShadow="0 2 8 0 #20000000" Padding="24" Margin="0,0,0,0">
+          <Grid RowDefinitions="Auto,*">
+            <TextBlock Grid.Row="0" FontSize="18" FontWeight="SemiBold" Foreground="#424242" Text="Предпросмотр сегментов" Margin="0,0,0,16" />
             <DataGrid Grid.Row="1" ItemsSource="{Binding PreviewSegments}" 
                       AutoGenerateColumns="False" 
                       IsReadOnly="True"
